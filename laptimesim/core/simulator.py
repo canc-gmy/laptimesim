@@ -45,8 +45,15 @@ class LaptimeSimulator:
         importer_format = config.simulation.track_format
         track_path = Path(config.simulation.track_file)
         if not track_path.is_absolute():
-            # If relative, resolve relative to current working directory
-            track_path = Path.cwd() / track_path
+            # If not found directly relative to CWD, check relative to examples/ or workspace root
+            if not track_path.is_file():
+                candidate = Path.cwd() / "examples" / track_path
+                if candidate.is_file():
+                    track_path = candidate
+                else:
+                    track_path = Path.cwd() / track_path
+            else:
+                track_path = track_path.resolve()
 
         importer = model_registry.create("track_importer", importer_format)
         self.track = importer.load(track_path)

@@ -93,5 +93,18 @@ def run(
         raise typer.Exit(code=1)
 
 
+@app.command()
+def serve(
+    host: str = typer.Option("127.0.0.1", help="Host address to bind"),
+    port: int = typer.Option(8000, help="Port to listen on"),
+    reload: bool = typer.Option(False, help="Enable auto-reload for development"),
+):
+    """Start the FastAPI REST server."""
+    import uvicorn
+    console.print(f"[bold green]Starting laptimesim REST API server on[/bold green] [cyan]http://{host}:{port}[/cyan]")
+    console.print(f"Interactive Swagger Documentation available at: [cyan]http://{host}:{port}/docs[/cyan]")
+    uvicorn.run("laptimesim.api.server:app", host=host, port=port, reload=reload)
+
+
 if __name__ == "__main__":
     app()
