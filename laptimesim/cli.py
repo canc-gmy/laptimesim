@@ -62,12 +62,24 @@ def run(
     """Run a lap time simulation with the provided configuration file."""
     try:
         cfg = FullSimulationConfig.from_toml(config_file)
-        logger = setup_logging(cfg.logging.level, cfg.logging.log_file)
-        logger.info(f"Starting simulation run: {cfg.simulation.name}")
-        console.print(f"[bold green]Config parsed successfully:[/bold green] {cfg.simulation.name}")
-        console.print(f"Vehicle Mass: {cfg.vehicle.mass} kg | Track File: {cfg.simulation.track_file}")
+        from laptimesim.core.simulator import LaptimeSimulator
+
+        sim = LaptimeSimulator(cfg)
+        console.print(f"[bold green]Starting Simulation:[/bold green] {cfg.simulation.name}")
+        output = sim.run()
+
+        console.print(f"[bold cyan]Simulation Completed![/bold cyan]")
+        console.print(f"Predicted Lap Time: [bold yellow]{output.result.lap_time:.3f} s[/bold yellow]")
+        console.print(f"Solver Status: {output.result.message}")
+        if output.exported_data_file:
+            console.print(f"Exported Telemetry: {output.exported_data_file}")
+        if output.gg_diagram_file:
+            console.print(f"Saved GG Diagram: {output.gg_diagram_file}")
+        if output.racing_line_plot_file:
+            console.print(f"Saved Racing Line Plot: {output.racing_line_plot_file}")
+
     except Exception as e:
-        console.print(f"[bold red]Simulation setup error:[/bold red] {e}")
+        console.print(f"[bold red]Simulation error:[/bold red] {e}")
         raise typer.Exit(code=1)
 
 
