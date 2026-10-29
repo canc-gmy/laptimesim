@@ -2,8 +2,10 @@
 
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
+import os
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import numpy as np
 
 from laptimesim.core.config import FullSimulationConfig
@@ -11,6 +13,31 @@ from laptimesim.track.canonical import CanonicalTrack
 from laptimesim.vehicle.vehicle_model import VehicleModel
 from laptimesim.solver.ocp import CurvilinearLaptimeSolver
 from laptimesim.uncertainty.distributions import ParameterDistribution, UncertaintySampler
+
+
+def _solve_single_mc_sample(args: Tuple[Dict[str, Any], Dict[str, float], CanonicalTrack]) -> Tuple[Dict[str, float], float]:
+    """Top-level worker function for parallel process execution."""
+    base_dict, s_dict, track = args
+    modified_dict = deepcopy(base_dict)
+
+    # Set parameters
+    for path, val in s_dict.items():
+        tokens = path.split(".")
+        target = modified_dict
+        for t in tokens[:-1]:
+            if t not in target:
+                target[t] = {}
+            target = target[t]
+        target[tokens[-1]] = val
+
+    cfg = FullSimulationConfig.model_validate(modified_dict)
+    # Turn off solver iterations printing in worker processes
+    cfg.logging.solver_iterations = False
+    vehicle = VehicleModel(cfg)
+    solver = CurvilinearLaptimeSolver(vehicle, track, cfg)
+    res = solver.solve()
+
+    return s_dict, float(res.lap_time)
 
 
 @dataclass
@@ -73,16 +100,16 @@ class MonteCarloEngine:
             target = target[t]
         target[tokens[-1]] = value
 
-    def run(self, num_samples: Optional[int] = None) -> UncertaintyResult:
-        """Run Monte Carlo simulation over sampled parameter variations."""
+    def run(self, num_samples: Optional[int] = None, max_workers: Optional[int] = None) -> UncertaintyResult:
+        """Run Monte Carlo simulation over sampled parameter variations in parallel."""
         start_time = time.time()
         unc_cfg = self.base_config.uncertainty or {}
         n_samples = num_samples or int(unc_cfg.get("num_samples", 20))
         conf_level = float(unc_cfg.get("confidence_level", 0.95))
+        workers = max_workers or min(os.cpu_count() or 4, 8)
 
         dists = self._extract_distributions()
         if not dists:
-            # If no distributions defined, perturb vehicle mass and front tire grip as defaults
             dists = [
                 ParameterDistribution("vehicle.mass", "normal", self.base_config.vehicle.mass, 3.0),
                 ParameterDistribution("tire.D", "normal", 1.5, 0.05),
@@ -95,26 +122,24 @@ class MonteCarloEngine:
         param_records: Dict[str, List[float]] = {d.param_path: [] for d in dists}
 
         base_dict = self.base_config.model_dump()
+        tasks = [(base_dict, s_dict, self.track) for s_dict in sample_list]
 
-        for s_dict in sample_list:
-            modified_dict = deepcopy(base_dict)
-            for path, val in s_dict.items():
-                self._apply_parameter(modified_dict, path, val)
-
-            # Reconstruct validated config and run solve
-            cfg = FullSimulationConfig.model_validate(modified_dict)
-            vehicle = VehicleModel(cfg)
-            solver = CurvilinearLaptimeSolver(vehicle, self.track, cfg)
-            res = solver.solve()
-
-            if res.lap_time > 0.0 and not np.isnan(res.lap_time):
-                lap_times.append(res.lap_time)
-                for path, val in s_dict.items():
-                    param_records[path].append(val)
+        # Execute simulations across multiple processes in parallel
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            futures = [executor.submit(_solve_single_mc_sample, task) for task in tasks]
+            for future in as_completed(futures):
+                try:
+                    s_dict, lap_t = future.result()
+                    if lap_t > 0.0 and not np.isnan(lap_t):
+                        lap_times.append(lap_t)
+                        for path, val in s_dict.items():
+                            param_records[path].append(val)
+                except Exception:
+                    continue
 
         times_arr = np.array(lap_times)
         if len(times_arr) == 0:
-            raise RuntimeError("All Monte Carlo simulation runs failed.")
+            raise RuntimeError("All parallel Monte Carlo simulation runs failed.")
 
         # Compute confidence interval bounds
         alpha = (1.0 - conf_level) / 2.0

@@ -2,9 +2,9 @@
 name = "FSAE Endurance Silverstone Sample"
 track_file = "tracks/sample_oval.csv"
 track_format = "csv"
-num_nodes = 100
-solver_max_iter = 3000
-solver_tolerance = 1e-6
+num_nodes = 50
+solver_max_iter = 1000
+solver_tolerance = 1e-4
 
 [vehicle]
 mass = 230.0              # kg (without driver)
@@ -68,3 +68,4 @@ output_dir = "./results"
 
 [logging]
 level = "INFO"
+solver_iterations = true

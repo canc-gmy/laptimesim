@@ -205,6 +205,7 @@ class CurvilinearLaptimeSolver:
             "print_level": 5 if self.config.logging.solver_iterations else 0,
             "linear_solver": "mumps",
             "mu_strategy": "adaptive",
+            "mumps_mem_percent": 1000,
         }
         opti.solver("ipopt", p_opts, s_opts)
 
