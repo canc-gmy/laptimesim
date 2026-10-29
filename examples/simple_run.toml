@@ -1,0 +1,70 @@
+[simulation]
+name = "FSAE Endurance Silverstone Sample"
+track_file = "tracks/sample_oval.csv"
+track_format = "csv"
+num_nodes = 100
+solver_max_iter = 3000
+solver_tolerance = 1e-6
+
+[vehicle]
+mass = 230.0              # kg (without driver)
+driver_mass = 75.0         # kg
+wheelbase = 1.530          # m
+track_front = 1.200        # m
+track_rear = 1.180         # m
+cg_height = 0.280          # m
+cg_longitudinal = 0.47     # fraction from front axle
+
+[vehicle.inertia]
+Ixx = 85.0    # kg*m^2
+Iyy = 120.0
+Izz = 95.0
+Ixz = 0.0
+
+[tire]
+model = "pacejka_mf52"
+front = { B = 10.5, C = 1.65, D = 1.5, E = -0.5, radius = 0.2286 }
+rear  = { B = 11.0, C = 1.68, D = 1.55, E = -0.4, radius = 0.2286 }
+
+[aero]
+model = "constant"
+Cl = 3.2
+Cd = 1.4
+frontal_area = 1.0
+cop_longitudinal = 0.45
+
+[suspension]
+model = "linear"
+front = { spring_rate = 35000, damping = 1800, arb_rate = 5000 }
+rear  = { spring_rate = 40000, damping = 2000, arb_rate = 4000 }
+
+[powertrain]
+model = "electric"
+motor_peak_torque = 230
+motor_peak_power = 80000
+motor_max_rpm = 6000
+gear_ratio = 3.5
+drivetrain_efficiency = 0.92
+
+[battery]
+model = "ecm"
+capacity_kwh = 6.5
+voltage_nominal = 400
+
+[brakes]
+model = "hydraulic"
+max_force_front = 5000
+max_force_rear = 3000
+brake_bias = 0.62
+
+[output]
+telemetry = true
+gg_diagram = true
+tire_utilization = true
+energy_profile = true
+sensitivity_report = true
+export_format = "csv"
+output_dir = "./results"
+
+[logging]
+level = "INFO"
