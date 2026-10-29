@@ -1,0 +1,20 @@
+<?xml version="1.0" standalone="yes"?>
+<OpenDRIVE>
+    <header revMajor="1" revMinor="4" name="Sample Oval" version="1.00" date="2026-10-29T12:00:00"/>
+    <road name="TrackMain" length="300.0" id="1" junction="-1">
+        <planView>
+            <geometry s="0.0" x="0.0" y="0.0" hdg="0.0" length="75.0">
+                <line/>
+            </geometry>
+            <geometry s="75.0" x="75.0" y="0.0" hdg="0.0" length="75.0">
+                <arc curvature="0.0418879"/>
+            </geometry>
+            <geometry s="150.0" x="75.0" y="47.74" hdg="3.14159" length="75.0">
+                <line/>
+            </geometry>
+            <geometry s="225.0" x="0.0" y="47.74" hdg="3.14159" length="75.0">
+                <arc curvature="0.0418879"/>
+            </geometry>
+        </planView>
+    </road>
+</OpenDRIVE>
