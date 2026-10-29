@@ -70,6 +70,12 @@ def run(
 
         console.print(f"[bold cyan]Simulation Completed![/bold cyan]")
         console.print(f"Predicted Lap Time: [bold yellow]{output.result.lap_time:.3f} s[/bold yellow]")
+        if output.uncertainty:
+            console.print(
+                f"Confidence Interval ({output.uncertainty.confidence_level*100:.0f}%): "
+                f"[bold magenta][{output.uncertainty.ci_lower:.3f} s - {output.uncertainty.ci_upper:.3f} s][/bold magenta] "
+                f"(Std: ±{output.uncertainty.std_lap_time:.3f} s)"
+            )
         console.print(f"Solver Status: {output.result.message}")
         if output.exported_data_file:
             console.print(f"Exported Telemetry: {output.exported_data_file}")
@@ -77,6 +83,10 @@ def run(
             console.print(f"Saved GG Diagram: {output.gg_diagram_file}")
         if output.racing_line_plot_file:
             console.print(f"Saved Racing Line Plot: {output.racing_line_plot_file}")
+        if output.distribution_plot_file:
+            console.print(f"Saved Lap Time Distribution Plot: {output.distribution_plot_file}")
+        if output.tornado_plot_file:
+            console.print(f"Saved Parameter Sensitivity Plot: {output.tornado_plot_file}")
 
     except Exception as e:
         console.print(f"[bold red]Simulation error:[/bold red] {e}")

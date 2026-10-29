@@ -14,6 +14,8 @@ from laptimesim.solver.ocp import CurvilinearLaptimeSolver, OCPResult
 from laptimesim.postprocessing.telemetry import TelemetryProcessor
 from laptimesim.postprocessing.export import ResultExporter
 from laptimesim.postprocessing.plots import SimulationPlotter
+from laptimesim.uncertainty.monte_carlo import MonteCarloEngine, UncertaintyResult
+from laptimesim.uncertainty.sensitivity import SensitivityPlotter
 import laptimesim.track  # Ensure importers are loaded
 
 
@@ -22,10 +24,13 @@ class SimulationOutput:
     """Full bundle of simulation execution artifacts."""
     result: OCPResult
     telemetry_df: pd.DataFrame
+    uncertainty: Optional[UncertaintyResult] = None
     exported_data_file: Optional[Path] = None
     gg_diagram_file: Optional[Path] = None
     telemetry_plot_file: Optional[Path] = None
     racing_line_plot_file: Optional[Path] = None
+    distribution_plot_file: Optional[Path] = None
+    tornado_plot_file: Optional[Path] = None
 
 
 class LaptimeSimulator:
@@ -84,11 +89,36 @@ class LaptimeSimulator:
         racing_line_file = out_dir / "racing_line.png"
         plotter.plot_track_racing_line(racing_line_file)
 
+        # Uncertainty Quantification
+        uq_result = None
+        dist_plot_file = None
+        tornado_file = None
+
+        unc_cfg = self.config.uncertainty or {}
+        if unc_cfg.get("enabled", False):
+            self.logger.info("Executing Monte Carlo parameter uncertainty analysis...")
+            mc_engine = MonteCarloEngine(self.config, self.track)
+            uq_result = mc_engine.run()
+            self.logger.info(
+                f"Monte Carlo complete: Mean={uq_result.mean_lap_time:.3f} s, "
+                f"95% CI=[{uq_result.ci_lower:.3f}, {uq_result.ci_upper:.3f}] s"
+            )
+
+            sens_plotter = SensitivityPlotter(uq_result)
+            dist_plot_file = out_dir / "lap_time_distribution.png"
+            sens_plotter.plot_lap_time_distribution(dist_plot_file)
+
+            tornado_file = out_dir / "parameter_sensitivity_tornado.png"
+            sens_plotter.plot_tornado_sensitivity(tornado_file)
+
         return SimulationOutput(
             result=result,
             telemetry_df=df,
+            uncertainty=uq_result,
             exported_data_file=data_file,
             gg_diagram_file=gg_file,
             telemetry_plot_file=telem_plot_file,
             racing_line_plot_file=racing_line_file,
+            distribution_plot_file=dist_plot_file,
+            tornado_plot_file=tornado_file,
         )
