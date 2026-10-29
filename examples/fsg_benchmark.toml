@@ -1,0 +1,74 @@
+[simulation]
+name = "FSG Hockenheim Endurance 1km Benchmark"
+track_file = "examples/tracks/fsg_endurance_1km.csv"
+track_format = "csv"
+num_nodes = 60
+solver_max_iter = 1200
+solver_tolerance = 1e-4
+
+[vehicle]
+mass = 215.0              # kg (FSAE EV competitive chassis)
+driver_mass = 75.0         # kg
+wheelbase = 1.530          # m
+track_front = 1.200        # m
+track_rear = 1.180         # m
+cg_height = 0.280          # m
+cg_longitudinal = 0.48     # 52% rear weight distribution
+
+[vehicle.inertia]
+Ixx = 78.0
+Iyy = 110.0
+Izz = 90.0
+Ixz = 0.0
+
+[tire]
+model = "pacejka_mf52"
+front = { B = 10.5, C = 1.65, D = 1.55, E = -0.4, radius = 0.2032 }
+rear  = { B = 11.0, C = 1.68, D = 1.60, E = -0.4, radius = 0.2032 }
+
+[aero]
+model = "constant"
+Cl = 3.6                  # High-downforce FSAE aero package
+Cd = 1.45
+frontal_area = 1.15
+cop_longitudinal = 0.46
+
+[suspension]
+model = "linear"
+front = { spring_rate = 38000, damping = 1900, arb_rate = 5500 }
+rear  = { spring_rate = 42000, damping = 2100, arb_rate = 4500 }
+
+[powertrain]
+model = "electric"
+motor_peak_torque = 240
+motor_peak_power = 80000  # 80 kW FSAE rules limit
+motor_max_rpm = 6500
+gear_ratio = 3.6
+drivetrain_efficiency = 0.94
+regen_enabled = true
+regen_max_torque = 60
+
+[battery]
+model = "ecm"
+capacity_kwh = 6.8
+voltage_nominal = 400
+internal_resistance = 0.045
+
+[brakes]
+model = "hydraulic"
+max_force_front = 5500
+max_force_rear = 3500
+brake_bias = 0.63
+
+[output]
+telemetry = true
+gg_diagram = true
+tire_utilization = true
+energy_profile = true
+sensitivity_report = true
+export_format = "csv"
+output_dir = "./results_fsg_benchmark"
+
+[logging]
+level = "INFO"
+solver_iterations = false
